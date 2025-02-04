@@ -13,7 +13,7 @@ const compression = require('compression');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorControllers');
-const bookindController = require('./controllers/bookingControllers');
+const bookingController = require('./controllers/bookingControllers');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
@@ -23,7 +23,7 @@ const viewRouter = require('./routes/viewsRoutes');
 //start the express app
 const app = express();
 
-app.enable('trust proxy');
+app.set('trust proxy', 1);
 
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
@@ -81,7 +81,7 @@ if (process.env.NODE_ENV === 'development') {
 app.post(
   '/webhook-checkout',
   express.raw({ type: 'application/json' }),
-  bookindController.webhookCeckout,
+  bookingController.webhookCeckout,
 );
 
 // Limit requests from same API
@@ -89,7 +89,10 @@ const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000,
   message: 'Too many requests from this IP, please try again in an hour!',
+  // Specify the number of trusted proxies (matches Express's trust proxy setting)
+  trustedProxies: 1,
 });
+
 app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
@@ -98,7 +101,7 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 app.use(cors());
 
-app.options('*', cors());
+// app.options('*', cors());
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
