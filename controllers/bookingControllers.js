@@ -21,7 +21,9 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
           currency: 'usd',
           product_data: {
             name: tour.name,
-            images: [`https://www.natours.dev/img/tours/${tour.imageCover}`],
+            images: [
+              `${req.protocol}://${req.get('host')}/img/tours/${tour.imageCover}`,
+            ],
             description: tour.summary,
           },
           unit_amount: tour.price * 100, // 10.00 USD (in cents)
@@ -82,7 +84,7 @@ exports.webhookCeckout = async (req, res, next) => {
   }
 
   // Handle the event
-  if (event.type === 'checkout.session.complete') {
+  if (event.type === 'checkout.session.completed') {
     createBookingCheckout(event.data.object);
   }
   // Return a 200 response to acknowledge receipt of the event
