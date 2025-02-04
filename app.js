@@ -91,6 +91,8 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 app.use(cors());
 
+app.options('*', cors());
+
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
 
