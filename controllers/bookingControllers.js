@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies, node/no-unpublished-require
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Tour = require('../models/tourModel');
 const Booking = require('../models/bookingModel');
