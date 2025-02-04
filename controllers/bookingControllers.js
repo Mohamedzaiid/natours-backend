@@ -66,6 +66,7 @@ const createBookingCheckout = async (session) => {
 
 exports.webhookCeckout = async (req, res, next) => {
   let event = req.body;
+  console.log(event);
   // Only verify the event if you have an endpoint secret defined.
   // Otherwise use the basic event deserialized with JSON.parse
   if (process.env.STRIPE_WEBHOOK_SECRET) {
