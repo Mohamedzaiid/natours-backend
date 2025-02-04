@@ -6,7 +6,7 @@ export const hideAlert = () => {
 };
 
 //type is success or error
-export const showAlert = (type, message) => {
+export const showAlert = (type, message, time = 7) => {
     hideAlert();
     const newDiv = document.createElement("div");
 
@@ -15,5 +15,5 @@ export const showAlert = (type, message) => {
     newDiv.innerHTML = message;
     // const markup = `<div class= "alert alert--${type}">${message}</div>`;
     document.querySelector('body').insertAdjacentElement('afterbegin', newDiv);
-    window.setTimeout(hideAlert, 5000);
+    window.setTimeout(hideAlert, time * 1000);
 };
