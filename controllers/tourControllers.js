@@ -52,7 +52,7 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
 exports.aliasTopTours = (req, res, next) => {
   req.query.limit = '5';
   req.query.sort = '-ratingsAverage,price';
-  req.query.fields = 'name,price,difficulty,summary,ratingsAverage';
+  req.query.fields = 'name,price,difficulty,summary,ratingsAverage,imageCover';
   next();
 };
 
