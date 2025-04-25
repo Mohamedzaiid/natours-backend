@@ -16,13 +16,12 @@ export const login = async (email, password) => {
 
     if (result.data.status === 'success') {
       // alert('Logged in successfully');
-      showAlert('success', 'Logged in seccessfully!');
+      showAlert('success', 'Logged in sucessfully!');
       window.setTimeout(() => {
         location.assign('/');
       }, 1500);
     }
   } catch (err) {
-   
     showAlert('error', err.response.data.message);
   }
 };
@@ -35,7 +34,7 @@ export const logout = async () => {
     });
 
     if (result.data.status === 'success') {
-      showAlert('success', 'Logged out seccessfully!');
+      showAlert('success', 'Logged out sucessfully!');
       location.assign('/');
     }
   } catch (err) {

@@ -18,7 +18,7 @@ export const updateSettings = async (data, type) => {
 
     if (result.data.status === 'success') {
       // alert('Logged in successfully');
-      showAlert('success', `${type.toUpperCase()} Updated Seccessfully!`);
+      showAlert('success', `${type.toUpperCase()} Updated sucessfully!`);
       window.setTimeout(() => {
         location.reload(true);
       }, 500);

@@ -42,7 +42,7 @@ exports.getOne = (Modle, popOptions) =>
     }
 
     res.status(200).json({
-      status: 'seccess',
+      status: 'sucess',
       data: {
         data: doc,
       },
