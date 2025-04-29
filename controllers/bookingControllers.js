@@ -96,3 +96,20 @@ exports.getBooking = factory.getOne(Booking);
 exports.getAllBookings = factory.getAllData(Booking);
 exports.updateBooking = factory.updateOne(Booking);
 exports.deleteBooking = factory.deleteOne(Booking);
+
+// Get current user's bookings
+exports.getMyBookings = catchAsync(async (req, res, next) => {
+  // Find bookings that belong to the logged in user
+  const bookings = await Booking.find({ user: req.user.id }).populate({
+    path: 'tour',
+    select: 'name duration slug imageCover price startDates ratingsAverage',
+  });
+
+  res.status(200).json({
+    status: 'success',
+    results: bookings.length,
+    data: {
+      data: bookings,
+    },
+  });
+});

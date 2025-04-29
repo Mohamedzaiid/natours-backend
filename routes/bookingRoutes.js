@@ -9,6 +9,9 @@ router.use(authController.protect);
 
 router.get('/checkout-session/:tourId', bookingController.getCheckoutSession);
 
+// Get my bookings route - available to all authenticated users
+router.get('/my-bookings', bookingController.getMyBookings);
+
 // Only admin and lead-guide can access these routes
 router.use(authController.restrictTo('admin', 'lead-guide'));
 
