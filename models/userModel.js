@@ -4,6 +4,13 @@ const validator = require('validator');
 const bcrypt = require('bcryptjs');
 
 const userScheme = new mongoose.Schema({
+  wishlist: {
+    type: [{
+      type: mongoose.Schema.ObjectId,
+      ref: 'Tour'
+    }],
+    default: []
+  },
   name: {
     type: String,
     required: [true, 'Please Tell Us Your Name'],
