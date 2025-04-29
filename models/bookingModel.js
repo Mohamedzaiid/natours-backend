@@ -32,9 +32,10 @@ const bookingSchema = new mongoose.Schema(
 
 // Populate user and tour whenever there's a find query
 bookingSchema.pre(/^find/, function (next) {
+  if (this.options.skipPopulation) return next();
   this.populate('user').populate({
     path: 'tour',
-    select: 'name',
+    select: 'name ',
   });
   next();
 });

@@ -100,10 +100,12 @@ exports.deleteBooking = factory.deleteOne(Booking);
 // Get current user's bookings
 exports.getMyBookings = catchAsync(async (req, res, next) => {
   // Find bookings that belong to the logged in user
-  const bookings = await Booking.find({ user: req.user.id }).populate({
-    path: 'tour',
-    select: 'name duration slug imageCover price startDates ratingsAverage',
-  });
+  const bookings = await Booking.find({ user: req.user.id })
+    .populate({
+      path: 'tour',
+      select: 'name duration slug imageCover price startDates ratingsAverage',
+    })
+    .setOptions({ skipPopulation: true });
 
   res.status(200).json({
     status: 'success',
