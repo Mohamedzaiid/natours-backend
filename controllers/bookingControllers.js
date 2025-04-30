@@ -13,6 +13,9 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
     return next(new AppError('No tour found with that ID', 404));
   }
 
+  // Get participants count from query params (default to 1 if not provided)
+  const participants = parseInt(req.query.participants) || 1;
+
   // 2) Create stripe session
   const session = await stripe.checkout.sessions.create({
     line_items: [
@@ -28,7 +31,7 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
           },
           unit_amount: tour.price * 100, // 10.00 USD (in cents)
         },
-        quantity: 1,
+        quantity: participants,
       },
     ],
     mode: 'payment',
