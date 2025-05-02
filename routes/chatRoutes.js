@@ -124,7 +124,7 @@ router.post(
 
       res.status(200).json({
         status: 'success',
-        message: completion.choices[0].message.content,
+        message: completion.choices[0].message,
       });
     } catch (error) {
       console.error('OpenAI API Error:', error);
