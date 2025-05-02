@@ -57,10 +57,13 @@ function generateDummyResponse(userMessage, allMessages) {
 // Initialize OpenAI client
 let openai;
 let useDummyResponses = false;
+const endpoint = "https://models.github.ai/inference";
+const model = "openai/gpt-4.1";
 
 try {
   openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.TOKEN,
+    baseURL: endpoint
   });
 } catch (error) {
   console.warn('Warning: OpenAI initialization failed:', error.message);
@@ -112,16 +115,16 @@ router.post(
       } else {
         // Normal OpenAI API call
         completion = await openai.chat.completions.create({
-          model: 'gpt-3.5-turbo', // More widely available model
+          model: model, // More widely available model
           messages: conversationWithSystemMessage,
-          temperature: 0.7,
-          max_tokens: 500,
+          temperature: 1,
+          top_p: 1,
         });
       }
 
       res.status(200).json({
         status: 'success',
-        message: completion.choices[0].message,
+        message: completion.choices[0].message.content,
       });
     } catch (error) {
       console.error('OpenAI API Error:', error);
@@ -194,10 +197,10 @@ router.post(
 
       // Normal OpenAI API streaming
       const stream = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo', // More widely available model
+        model: model, // More widely available model
         messages: conversationWithSystemMessage,
-        temperature: 0.7,
-        max_tokens: 500,
+        temperature: 1,
+        top_p: 1,
         stream: true,
       });
 
