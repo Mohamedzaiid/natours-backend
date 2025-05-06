@@ -71,9 +71,6 @@
     "rollup-plugin-node-builtins": "^2.1.2"
   },
   "engines": {
-    "node": ">=20.0.0"
-  },
-  "resolutions": {
-    "buffer-equal-constant-time": "1.0.1"
+    "node": "^23.11.0"
   }
 }
