@@ -4,6 +4,7 @@ const Tour = require('../models/tourModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
+const APIFeatures = require('../utils/apiFeatures');
 
 const storage = multer.memoryStorage();
 
@@ -199,3 +200,88 @@ exports.createNewTour = factory.createOne(Tour);
 exports.getTour = factory.getOne(Tour, { path: 'reviews' });
 exports.updateTour = factory.updateOne(Tour);
 exports.deleteTour = factory.deleteOne(Tour);
+
+// Advanced search functionality with AI suggestions
+exports.searchTours = catchAsync(async (req, res, next) => {
+  // Get the query parameters
+  const { name, location, date, difficulty, duration, maxGroupSize, price } =
+    req.query;
+
+  // Build a search query object
+  const searchQuery = {};
+
+  // Add filters based on provided parameters
+  if (name) {
+    // Search by name, summary, or description with case-insensitive search
+    searchQuery.$or = [
+      { name: { $regex: name, $options: 'i' } },
+      { summary: { $regex: name, $options: 'i' } },
+      { description: { $regex: name, $options: 'i' } },
+    ];
+  }
+
+  if (location) {
+    // Search by location names or starting location
+    searchQuery.$or = searchQuery.$or || [];
+    searchQuery.$or.push(
+      { 'startLocation.description': { $regex: location, $options: 'i' } },
+      { 'locations.description': { $regex: location, $options: 'i' } },
+    );
+  }
+
+  if (date) {
+    // This would require parsing the date string and finding tours with start dates
+    // around that period. Simplified version for demonstration:
+    const dateObj = new Date(date);
+    if (!Number.isNaN(dateObj.getTime())) {
+      // If valid date, find tours starting after this date
+      searchQuery.startDates = { $gte: dateObj };
+    }
+  }
+
+  if (difficulty) {
+    searchQuery.difficulty = difficulty.toLowerCase();
+  }
+
+  if (duration) {
+    // Range search for duration
+    const [min, max] = duration.split('-').map(Number);
+    if (!Number.isNaN(min) && !Number.isNaN(max)) {
+      searchQuery.duration = { $gte: min, $lte: max };
+    } else if (!Number.isNaN(min)) {
+      searchQuery.duration = { $gte: min };
+    }
+  }
+
+  if (maxGroupSize) {
+    // Find tours that can accommodate at least the specified group size
+    searchQuery.maxGroupSize = { $gte: parseInt(maxGroupSize, 10) };
+  }
+
+  if (price) {
+    // Range search for price
+    const [min, max] = price.split('-').map(Number);
+    if (!Number.isNaN(min) && !Number.isNaN(max)) {
+      searchQuery.price = { $gte: min, $lte: max };
+    } else if (!Number.isNaN(min)) {
+      searchQuery.price = { $gte: min };
+    }
+  }
+
+  // Execute the search query
+  const features = new APIFeatures(Tour.find(searchQuery), req.query)
+    .sort()
+    .limitFields()
+    .paginate();
+
+  const tours = await features.query;
+
+  // Return the results
+  res.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: {
+      data: tours,
+    },
+  });
+});
