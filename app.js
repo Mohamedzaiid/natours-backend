@@ -97,8 +97,8 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '30kb' }));
+app.use(express.urlencoded({ extended: true, limit: '30kb' }));
 app.use(cookieParser());
 app.use(cors());
 
