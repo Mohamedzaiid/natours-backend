@@ -205,18 +205,19 @@ exports.deleteTour = factory.deleteOne(Tour);
 // Enhanced search functionality with location mapping
 exports.searchTours = catchAsync(async (req, res, next) => {
   // Get the query parameters
-  const { name, location, date, difficulty, duration, maxGroupSize, price } = req.query;
-  
+  const { name, location, date, difficulty, duration, maxGroupSize, price } =
+    req.query;
+
   // Build a search query object
   const searchQuery = {};
   const searchConditions = [];
-  
+
   // Process location-based search (from name or location params)
   if (name || location) {
     const searchTerm = name || location;
     // Get expanded locations (e.g., "Miami" → ["miami", "usa", "united states", "america"])
     const expandedLocations = expandSearchLocation(searchTerm);
-    
+
     // Build a comprehensive location search
     const locationSearch = {
       $or: [
@@ -224,11 +225,11 @@ exports.searchTours = catchAsync(async (req, res, next) => {
         { name: { $regex: searchTerm, $options: 'i' } },
         { summary: { $regex: searchTerm, $options: 'i' } },
         { description: { $regex: searchTerm, $options: 'i' } },
-      ]
+      ],
     };
-    
+
     // Add each expanded location to the search
-    expandedLocations.forEach(loc => {
+    expandedLocations.forEach((loc) => {
       locationSearch.$or.push(
         { 'startLocation.description': { $regex: loc, $options: 'i' } },
         { 'startLocation.address': { $regex: loc, $options: 'i' } },
@@ -236,89 +237,89 @@ exports.searchTours = catchAsync(async (req, res, next) => {
         { 'locations.description': { $regex: loc, $options: 'i' } },
         { 'locations.address': { $regex: loc, $options: 'i' } },
         // Also search in the country field specifically
-        { 'locations.country': { $regex: new RegExp(loc, 'i') } }
+        { 'locations.country': { $regex: new RegExp(loc, 'i') } },
       );
     });
-    
+
     searchConditions.push(locationSearch);
   }
-  
+
   if (date) {
     // Enhanced date search with seasonal terms support
     let dateObj;
     let dateCondition;
-    
+
     // Check if it's a standard date format
     dateObj = new Date(date);
-    
+
     if (!isNaN(dateObj.getTime())) {
       // Valid date - find tours starting within 90 days of this date
       const endDate = new Date(dateObj);
       endDate.setDate(endDate.getDate() + 90);
-      
+
       dateCondition = {
         startDates: {
           $gte: dateObj,
-          $lte: endDate
-        }
+          $lte: endDate,
+        },
       };
     } else {
       // Check for seasonal terms
       const lowerDate = date.toLowerCase();
       let dateRange = {};
-      
+
       const currentYear = new Date().getFullYear();
-      
+
       if (lowerDate.includes('summer')) {
         dateRange = {
           $gte: new Date(`${currentYear}-06-01`),
-          $lte: new Date(`${currentYear}-08-31`)
+          $lte: new Date(`${currentYear}-08-31`),
         };
       } else if (lowerDate.includes('winter')) {
         // Winter may span across years
         if (new Date().getMonth() < 3) {
           // If current date is in Jan-Feb, winter is current winter
           dateRange = {
-            $gte: new Date(`${currentYear-1}-12-01`),
-            $lte: new Date(`${currentYear}-02-28`)
+            $gte: new Date(`${currentYear - 1}-12-01`),
+            $lte: new Date(`${currentYear}-02-28`),
           };
         } else {
           // Otherwise, winter is upcoming
           dateRange = {
             $gte: new Date(`${currentYear}-12-01`),
-            $lte: new Date(`${currentYear+1}-02-28`)
+            $lte: new Date(`${currentYear + 1}-02-28`),
           };
         }
       } else if (lowerDate.includes('spring')) {
         dateRange = {
           $gte: new Date(`${currentYear}-03-01`),
-          $lte: new Date(`${currentYear}-05-31`)
+          $lte: new Date(`${currentYear}-05-31`),
         };
       } else if (lowerDate.includes('fall') || lowerDate.includes('autumn')) {
         dateRange = {
           $gte: new Date(`${currentYear}-09-01`),
-          $lte: new Date(`${currentYear}-11-30`)
+          $lte: new Date(`${currentYear}-11-30`),
         };
       }
-      
+
       if (Object.keys(dateRange).length > 0) {
         dateCondition = { startDates: dateRange };
       }
     }
-    
+
     if (dateCondition) {
       searchConditions.push(dateCondition);
     }
   }
-  
+
   if (difficulty) {
     searchConditions.push({ difficulty: difficulty.toLowerCase() });
   }
-  
+
   if (duration) {
     // Range search for duration with more flexible parsing
     let durationCondition;
-    
+
     // Check if it's a range (e.g., "5-10")
     if (duration.includes('-')) {
       const [min, max] = duration.split('-').map(Number);
@@ -344,21 +345,23 @@ exports.searchTours = catchAsync(async (req, res, next) => {
         }
       }
     }
-    
+
     if (durationCondition) {
       searchConditions.push(durationCondition);
     }
   }
-  
+
   if (maxGroupSize) {
     // Find tours that can accommodate at least the specified group size
-    searchConditions.push({ maxGroupSize: { $gte: parseInt(maxGroupSize, 10) } });
+    searchConditions.push({
+      maxGroupSize: { $gte: parseInt(maxGroupSize, 10) },
+    });
   }
-  
+
   if (price) {
     // Range search for price with more flexible parsing
     let priceCondition;
-    
+
     // Check if it's a range
     if (price.includes('-')) {
       const [min, max] = price.split('-').map(Number);
@@ -372,9 +375,15 @@ exports.searchTours = catchAsync(async (req, res, next) => {
       const priceLower = price.toLowerCase();
       if (priceLower.includes('budget') || priceLower.includes('cheap')) {
         priceCondition = { price: { $lte: 500 } };
-      } else if (priceLower.includes('mid') || priceLower.includes('moderate')) {
+      } else if (
+        priceLower.includes('mid') ||
+        priceLower.includes('moderate')
+      ) {
         priceCondition = { price: { $gt: 500, $lte: 1500 } };
-      } else if (priceLower.includes('premium') || priceLower.includes('luxury')) {
+      } else if (
+        priceLower.includes('premium') ||
+        priceLower.includes('luxury')
+      ) {
         priceCondition = { price: { $gt: 1500 } };
       } else {
         // Try to parse as a single number
@@ -384,97 +393,15 @@ exports.searchTours = catchAsync(async (req, res, next) => {
         }
       }
     }
-    
+
     if (priceCondition) {
       searchConditions.push(priceCondition);
     }
   }
-  
+
   // Combine all search conditions with AND logic
   if (searchConditions.length > 0) {
     searchQuery.$and = searchConditions;
-  }
-  
-  // Execute the search query
-  const features = new APIFeatures(Tour.find(searchQuery), req.query)
-    .sort()
-    .limitFields()
-    .paginate();
-  
-  const tours = await features.query;
-  
-  // Return the results
-  res.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: {
-      data: tours
-    }
-  });
-});
-
-// Old search functionality - removed
-    req.query;
-
-  // Build a search query object
-  const searchQuery = {};
-
-  // Add filters based on provided parameters
-  if (name) {
-    // Search by name, summary, or description with case-insensitive search
-    searchQuery.$or = [
-      { name: { $regex: name, $options: 'i' } },
-      { summary: { $regex: name, $options: 'i' } },
-      { description: { $regex: name, $options: 'i' } },
-    ];
-  }
-
-  if (location) {
-    // Search by location names or starting location
-    searchQuery.$or = searchQuery.$or || [];
-    searchQuery.$or.push(
-      { 'startLocation.description': { $regex: location, $options: 'i' } },
-      { 'locations.description': { $regex: location, $options: 'i' } },
-    );
-  }
-
-  if (date) {
-    // This would require parsing the date string and finding tours with start dates
-    // around that period. Simplified version for demonstration:
-    const dateObj = new Date(date);
-    if (!Number.isNaN(dateObj.getTime())) {
-      // If valid date, find tours starting after this date
-      searchQuery.startDates = { $gte: dateObj };
-    }
-  }
-
-  if (difficulty) {
-    searchQuery.difficulty = difficulty.toLowerCase();
-  }
-
-  if (duration) {
-    // Range search for duration
-    const [min, max] = duration.split('-').map(Number);
-    if (!Number.isNaN(min) && !Number.isNaN(max)) {
-      searchQuery.duration = { $gte: min, $lte: max };
-    } else if (!Number.isNaN(min)) {
-      searchQuery.duration = { $gte: min };
-    }
-  }
-
-  if (maxGroupSize) {
-    // Find tours that can accommodate at least the specified group size
-    searchQuery.maxGroupSize = { $gte: parseInt(maxGroupSize, 10) };
-  }
-
-  if (price) {
-    // Range search for price
-    const [min, max] = price.split('-').map(Number);
-    if (!Number.isNaN(min) && !Number.isNaN(max)) {
-      searchQuery.price = { $gte: min, $lte: max };
-    } else if (!Number.isNaN(min)) {
-      searchQuery.price = { $gte: min };
-    }
   }
 
   // Execute the search query
@@ -494,3 +421,85 @@ exports.searchTours = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+// Old search functionality - removed
+//     req.query;
+
+//   // Build a search query object
+//   const searchQuery = {};
+
+//   // Add filters based on provided parameters
+//   if (name) {
+//     // Search by name, summary, or description with case-insensitive search
+//     searchQuery.$or = [
+//       { name: { $regex: name, $options: 'i' } },
+//       { summary: { $regex: name, $options: 'i' } },
+//       { description: { $regex: name, $options: 'i' } },
+//     ];
+//   }
+
+//   if (location) {
+//     // Search by location names or starting location
+//     searchQuery.$or = searchQuery.$or || [];
+//     searchQuery.$or.push(
+//       { 'startLocation.description': { $regex: location, $options: 'i' } },
+//       { 'locations.description': { $regex: location, $options: 'i' } },
+//     );
+//   }
+
+//   if (date) {
+//     // This would require parsing the date string and finding tours with start dates
+//     // around that period. Simplified version for demonstration:
+//     const dateObj = new Date(date);
+//     if (!Number.isNaN(dateObj.getTime())) {
+//       // If valid date, find tours starting after this date
+//       searchQuery.startDates = { $gte: dateObj };
+//     }
+//   }
+
+//   if (difficulty) {
+//     searchQuery.difficulty = difficulty.toLowerCase();
+//   }
+
+//   if (duration) {
+//     // Range search for duration
+//     const [min, max] = duration.split('-').map(Number);
+//     if (!Number.isNaN(min) && !Number.isNaN(max)) {
+//       searchQuery.duration = { $gte: min, $lte: max };
+//     } else if (!Number.isNaN(min)) {
+//       searchQuery.duration = { $gte: min };
+//     }
+//   }
+
+//   if (maxGroupSize) {
+//     // Find tours that can accommodate at least the specified group size
+//     searchQuery.maxGroupSize = { $gte: parseInt(maxGroupSize, 10) };
+//   }
+
+//   if (price) {
+//     // Range search for price
+//     const [min, max] = price.split('-').map(Number);
+//     if (!Number.isNaN(min) && !Number.isNaN(max)) {
+//       searchQuery.price = { $gte: min, $lte: max };
+//     } else if (!Number.isNaN(min)) {
+//       searchQuery.price = { $gte: min };
+//     }
+//   }
+
+//   // Execute the search query
+//   const features = new APIFeatures(Tour.find(searchQuery), req.query)
+//     .sort()
+//     .limitFields()
+//     .paginate();
+
+//   const tours = await features.query;
+
+//   // Return the results
+//   res.status(200).json({
+//     status: 'success',
+//     results: tours.length,
+//     data: {
+//       data: tours,
+//     },
+//   });
+// });
