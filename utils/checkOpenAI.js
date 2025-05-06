@@ -1,7 +1,6 @@
 const dotenv = require('dotenv');
 const path = require('path');
 const OpenAI = require('openai');
-const fs = require('fs');
 
 // Load environment variables from config.env
 dotenv.config({ path: path.join(__dirname, '../config.env') });
@@ -30,7 +29,7 @@ async function testOpenAIConnection() {
       messages: [{ role: 'user', content: 'Hello, are you working?' }],
       max_tokens: 10,
     });
-    
+
     console.log('✅ Successfully connected to OpenAI API');
     console.log('Response:', response.choices[0].message);
     return true;

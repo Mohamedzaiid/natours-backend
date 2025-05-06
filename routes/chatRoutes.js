@@ -1,8 +1,9 @@
 const express = require('express');
+
 const router = express.Router();
 const OpenAI = require('openai');
-const catchAsync = require('./../utils/catchAsync');
-const AppError = require('./../utils/appError');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
 // Function to generate dummy responses for development/testing
 function generateDummyResponse(userMessage, allMessages) {
@@ -57,13 +58,13 @@ function generateDummyResponse(userMessage, allMessages) {
 // Initialize OpenAI client
 let openai;
 let useDummyResponses = false;
-const endpoint = "https://models.github.ai/inference";
-const model = "openai/gpt-4.1";
+const endpoint = 'https://models.github.ai/inference';
+const model = 'openai/gpt-4.1';
 
 try {
   openai = new OpenAI({
     apiKey: process.env.TOKEN,
-    baseURL: endpoint
+    baseURL: endpoint,
   });
 } catch (error) {
   console.warn('Warning: OpenAI initialization failed:', error.message);
@@ -82,23 +83,23 @@ router.post(
 
     // Prepend system message
     const conversationWithSystemMessage = [
-    {
-    role: 'system',
-    content:
-    'You are a helpful, friendly travel concierge for Natours, a tour website specializing in nature adventures. ' +
-    'You help users find the perfect tour or create custom travel plans when no existing tours match their needs. ' +
-    'When helping users with tour searches: ' +
-    '1. Ask clarifying questions about their destination, travel dates, group size, budget, and activity preferences. ' +
-    '2. If they mention specific criteria, suggest real tours from our catalog that match their preferences. ' +
-    '3. If no tours match their criteria, offer to help create a custom itinerary and collect their contact information. ' +
-        '4. Be encouraging and positive, highlighting the beautiful destinations and memorable experiences. ' +
-        'Be enthusiastic but concise. Avoid responses longer than 3 paragraphs. ' +
+      {
+        role: 'system',
+        content:
+          'You are a helpful, friendly travel concierge for Natours, a tour website specializing in nature adventures. ' +
+          'You help users find the perfect tour or create custom travel plans when no existing tours match their needs. ' +
+          'When helping users with tour searches: ' +
+          '1. Ask clarifying questions about their destination, travel dates, group size, budget, and activity preferences. ' +
+          '2. If they mention specific criteria, suggest real tours from our catalog that match their preferences. ' +
+          '3. If no tours match their criteria, offer to help create a custom itinerary and collect their contact information. ' +
+          '4. Be encouraging and positive, highlighting the beautiful destinations and memorable experiences. ' +
+          'Be enthusiastic but concise. Avoid responses longer than 3 paragraphs. ' +
           'Focus on natural destinations and outdoor adventures. ' +
-            'If they came from the search box, they are interested in planning a trip with their criteria. ' +
-            'Make the conversation interactive and fun by asking questions one at a time to better understand their needs.',
-        },
-        ...messages,
-      ];
+          'If they came from the search box, they are interested in planning a trip with their criteria. ' +
+          'Make the conversation interactive and fun by asking questions one at a time to better understand their needs.',
+      },
+      ...messages,
+    ];
 
     try {
       let completion;
@@ -139,94 +140,94 @@ router.post(
 );
 
 // Streaming version (bonus)
-router.post(
-  '/chat-stream',
-  catchAsync(async (req, res, next) => {
-    const { messages } = req.body;
+// router.post(
+//   '/chat-stream',
+//   catchAsync(async (req, res, next) => {
+//     const { messages } = req.body;
 
-    if (!messages || !Array.isArray(messages)) {
-      return next(new AppError('Please provide a valid messages array', 400));
-    }
+//     if (!messages || !Array.isArray(messages)) {
+//       return next(new AppError('Please provide a valid messages array', 400));
+//     }
 
-    // Prepend system message (same as above)
-    const conversationWithSystemMessage = [
-      {
-        role: 'system',
-        content:
-          'You are a helpful, friendly travel concierge for Natours. ' +
-          'Provide personalized travel recommendations and itineraries. ' +
-          'Ask clarifying questions about budget, accommodation preferences, ' +
-          'activities of interest, and trip duration. ' +
-          'Be enthusiastic but concise. Avoid responses longer than 3 paragraphs. ' +
-          'Focus on natural destinations and outdoor adventures.',
-      },
-      ...messages,
-    ];
+//     // Prepend system message (same as above)
+//     const conversationWithSystemMessage = [
+//       {
+//         role: 'system',
+//         content:
+//           'You are a helpful, friendly travel concierge for Natours. ' +
+//           'Provide personalized travel recommendations and itineraries. ' +
+//           'Ask clarifying questions about budget, accommodation preferences, ' +
+//           'activities of interest, and trip duration. ' +
+//           'Be enthusiastic but concise. Avoid responses longer than 3 paragraphs. ' +
+//           'Focus on natural destinations and outdoor adventures.',
+//       },
+//       ...messages,
+//     ];
 
-    // Set up SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+//     // Set up SSE headers
+//     res.setHeader('Content-Type', 'text/event-stream');
+//     res.setHeader('Cache-Control', 'no-cache');
+//     res.setHeader('Connection', 'keep-alive');
 
-    try {
-      if (useDummyResponses || process.env.USE_DUMMY_RESPONSES === 'true') {
-        // Use dummy response for development/testing with streaming simulation
-        console.log('Using dummy response mode (streaming)');
-        const lastMessage = messages[messages.length - 1].content;
-        const dummyResponse = generateDummyResponse(lastMessage, messages);
+//     try {
+//       if (useDummyResponses || process.env.USE_DUMMY_RESPONSES === 'true') {
+//         // Use dummy response for development/testing with streaming simulation
+//         console.log('Using dummy response mode (streaming)');
+//         const lastMessage = messages[messages.length - 1].content;
+//         const dummyResponse = generateDummyResponse(lastMessage, messages);
 
-        // Simulate streaming by sending chunks of the response
-        const words = dummyResponse.split(' ');
-        const chunks = [];
+//         // Simulate streaming by sending chunks of the response
+//         const words = dummyResponse.split(' ');
+//         const chunks = [];
 
-        // Group words into chunks (simulate token chunks)
-        for (let i = 0; i < words.length; i += 3) {
-          chunks.push(words.slice(i, i + 3).join(' '));
-        }
+//         // Group words into chunks (simulate token chunks)
+//         for (let i = 0; i < words.length; i += 3) {
+//           chunks.push(words.slice(i, i + 3).join(' '));
+//         }
 
-        // Send each chunk with a delay
-        for (let i = 0; i < chunks.length; i++) {
-          // Use setTimeout to simulate streaming delays
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          res.write(`data: ${JSON.stringify({ content: chunks[i] + ' ' })}
+//         // Send each chunk with a delay
+//         for (let i = 0; i < chunks.length; i++) {
+//           // Use setTimeout to simulate streaming delays
+//           await new Promise((resolve) => setTimeout(resolve, 100));
+//           res.write(`data: ${JSON.stringify({ content: chunks[i] + ' ' })}
 
-`);
-        }
+// `);
+//         }
 
-        res.write(`data: ${JSON.stringify({ done: true })}
+//         res.write(`data: ${JSON.stringify({ done: true })}
 
-`);
-        res.end();
-        return;
-      }
+// `);
+//         res.end();
+//         return;
+//       }
 
-      // Normal OpenAI API streaming
-      const stream = await openai.chat.completions.create({
-        model: model, // More widely available model
-        messages: conversationWithSystemMessage,
-        temperature: 1,
-        top_p: 1,
-        stream: true,
-      });
+//       // Normal OpenAI API streaming
+//       // const stream = await openai.chat.completions.create({
+//       //   model: model, // More widely available model
+//       //   messages: conversationWithSystemMessage,
+//       //   temperature: 1,
+//       //   top_p: 1,
+//       //   stream: true,
+//       // });
 
-      // Stream the response
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
-        }
-      }
+//       // Stream the response
+//       // for await (const chunk of stream) {
+//       //   const content = chunk.choices[0]?.delta?.content || '';
+//       //   if (content) {
+//       //     res.write(`data: ${JSON.stringify({ content })}\n\n`);
+//       //   }
+//       // }
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
-    } catch (error) {
-      console.error('OpenAI API Error:', error);
-      res.write(
-        `data: ${JSON.stringify({ error: 'Error communicating with AI service' })}\n\n`,
-      );
-      res.end();
-    }
-  }),
-);
+//       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+//       res.end();
+//     } catch (error) {
+//       console.error('OpenAI API Error:', error);
+//       res.write(
+//         `data: ${JSON.stringify({ error: 'Error communicating with AI service' })}\n\n`,
+//       );
+//       res.end();
+//     }
+//   }),
+// );
 
 module.exports = router;

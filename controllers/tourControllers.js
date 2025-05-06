@@ -203,224 +203,224 @@ exports.updateTour = factory.updateOne(Tour);
 exports.deleteTour = factory.deleteOne(Tour);
 
 // Enhanced search functionality with location mapping
-// exports.searchTours = catchAsync(async (req, res, next) => {
-//   // Get the query parameters
-//   const { name, location, date, difficulty, duration, maxGroupSize, price } =
-//     req.query;
+exports.searchTours = catchAsync(async (req, res, next) => {
+  // Get the query parameters
+  const { name, location, date, difficulty, duration, maxGroupSize, price } =
+    req.query;
 
-//   // Build a search query object
-//   const searchQuery = {};
-//   const searchConditions = [];
+  // Build a search query object
+  const searchQuery = {};
+  const searchConditions = [];
 
-//   // Process location-based search (from name or location params)
-//   if (name || location) {
-//     const searchTerm = name || location;
-//     // Get expanded locations (e.g., "Miami" → ["miami", "usa", "united states", "america"])
-//     const expandedLocations = expandSearchLocation(searchTerm);
+  // Process location-based search (from name or location params)
+  if (name || location) {
+    const searchTerm = name || location;
+    // Get expanded locations (e.g., "Miami" → ["miami", "usa", "united states", "america"])
+    const expandedLocations = expandSearchLocation(searchTerm);
 
-//     // Build a comprehensive location search
-//     const locationSearch = {
-//       $or: [
-//         // Tour name, summary, description
-//         { name: { $regex: searchTerm, $options: 'i' } },
-//         { summary: { $regex: searchTerm, $options: 'i' } },
-//         { description: { $regex: searchTerm, $options: 'i' } },
-//       ],
-//     };
+    // Build a comprehensive location search
+    const locationSearch = {
+      $or: [
+        // Tour name, summary, description
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { summary: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+      ],
+    };
 
-//     // Add each expanded location to the search
-//     expandedLocations.forEach((loc) => {
-//       locationSearch.$or.push(
-//         { 'startLocation.description': { $regex: loc, $options: 'i' } },
-//         { 'startLocation.address': { $regex: loc, $options: 'i' } },
-//         { 'startLocation.country': { $regex: new RegExp(loc, 'i') } },
-//         { 'locations.description': { $regex: loc, $options: 'i' } },
-//         { 'locations.address': { $regex: loc, $options: 'i' } },
-//         // Also search in the country field specifically
-//         { 'locations.country': { $regex: new RegExp(loc, 'i') } },
-//       );
-//     });
+    // Add each expanded location to the search
+    expandedLocations.forEach((loc) => {
+      locationSearch.$or.push(
+        { 'startLocation.description': { $regex: loc, $options: 'i' } },
+        { 'startLocation.address': { $regex: loc, $options: 'i' } },
+        { 'startLocation.country': { $regex: new RegExp(loc, 'i') } },
+        { 'locations.description': { $regex: loc, $options: 'i' } },
+        { 'locations.address': { $regex: loc, $options: 'i' } },
+        // Also search in the country field specifically
+        { 'locations.country': { $regex: new RegExp(loc, 'i') } },
+      );
+    });
 
-//     searchConditions.push(locationSearch);
-//   }
+    searchConditions.push(locationSearch);
+  }
 
-//   if (date) {
-//     // Enhanced date search with seasonal terms support
+  if (date) {
+    // Enhanced date search with seasonal terms support
 
-//     let dateCondition;
+    let dateCondition;
 
-//     // Check if it's a standard date format
-//     const dateObj = new Date(date);
+    // Check if it's a standard date format
+    const dateObj = new Date(date);
 
-//     if (!Number.isNaN(dateObj.getTime())) {
-//       // Valid date - find tours starting within 90 days of this date
-//       const endDate = new Date(dateObj);
-//       endDate.setDate(endDate.getDate() + 90);
+    if (!Number.isNaN(dateObj.getTime())) {
+      // Valid date - find tours starting within 90 days of this date
+      const endDate = new Date(dateObj);
+      endDate.setDate(endDate.getDate() + 90);
 
-//       dateCondition = {
-//         startDates: {
-//           $gte: dateObj,
-//           $lte: endDate,
-//         },
-//       };
-//     } else {
-//       // Check for seasonal terms
-//       const lowerDate = date.toLowerCase();
-//       let dateRange = {};
+      dateCondition = {
+        startDates: {
+          $gte: dateObj,
+          $lte: endDate,
+        },
+      };
+    } else {
+      // Check for seasonal terms
+      const lowerDate = date.toLowerCase();
+      let dateRange = {};
 
-//       const currentYear = new Date().getFullYear();
+      const currentYear = new Date().getFullYear();
 
-//       if (lowerDate.includes('summer')) {
-//         dateRange = {
-//           $gte: new Date(`${currentYear}-06-01`),
-//           $lte: new Date(`${currentYear}-08-31`),
-//         };
-//       } else if (lowerDate.includes('winter')) {
-//         // Winter may span across years
-//         if (new Date().getMonth() < 3) {
-//           // If current date is in Jan-Feb, winter is current winter
-//           dateRange = {
-//             $gte: new Date(`${currentYear - 1}-12-01`),
-//             $lte: new Date(`${currentYear}-02-28`),
-//           };
-//         } else {
-//           // Otherwise, winter is upcoming
-//           dateRange = {
-//             $gte: new Date(`${currentYear}-12-01`),
-//             $lte: new Date(`${currentYear + 1}-02-28`),
-//           };
-//         }
-//       } else if (lowerDate.includes('spring')) {
-//         dateRange = {
-//           $gte: new Date(`${currentYear}-03-01`),
-//           $lte: new Date(`${currentYear}-05-31`),
-//         };
-//       } else if (lowerDate.includes('fall') || lowerDate.includes('autumn')) {
-//         dateRange = {
-//           $gte: new Date(`${currentYear}-09-01`),
-//           $lte: new Date(`${currentYear}-11-30`),
-//         };
-//       }
+      if (lowerDate.includes('summer')) {
+        dateRange = {
+          $gte: new Date(`${currentYear}-06-01`),
+          $lte: new Date(`${currentYear}-08-31`),
+        };
+      } else if (lowerDate.includes('winter')) {
+        // Winter may span across years
+        if (new Date().getMonth() < 3) {
+          // If current date is in Jan-Feb, winter is current winter
+          dateRange = {
+            $gte: new Date(`${currentYear - 1}-12-01`),
+            $lte: new Date(`${currentYear}-02-28`),
+          };
+        } else {
+          // Otherwise, winter is upcoming
+          dateRange = {
+            $gte: new Date(`${currentYear}-12-01`),
+            $lte: new Date(`${currentYear + 1}-02-28`),
+          };
+        }
+      } else if (lowerDate.includes('spring')) {
+        dateRange = {
+          $gte: new Date(`${currentYear}-03-01`),
+          $lte: new Date(`${currentYear}-05-31`),
+        };
+      } else if (lowerDate.includes('fall') || lowerDate.includes('autumn')) {
+        dateRange = {
+          $gte: new Date(`${currentYear}-09-01`),
+          $lte: new Date(`${currentYear}-11-30`),
+        };
+      }
 
-//       if (Object.keys(dateRange).length > 0) {
-//         dateCondition = { startDates: dateRange };
-//       }
-//     }
+      if (Object.keys(dateRange).length > 0) {
+        dateCondition = { startDates: dateRange };
+      }
+    }
 
-//     if (dateCondition) {
-//       searchConditions.push(dateCondition);
-//     }
-//   }
+    if (dateCondition) {
+      searchConditions.push(dateCondition);
+    }
+  }
 
-//   if (difficulty) {
-//     searchConditions.push({ difficulty: difficulty.toLowerCase() });
-//   }
+  if (difficulty) {
+    searchConditions.push({ difficulty: difficulty.toLowerCase() });
+  }
 
-//   if (duration) {
-//     // Range search for duration with more flexible parsing
-//     let durationCondition;
+  if (duration) {
+    // Range search for duration with more flexible parsing
+    let durationCondition;
 
-//     // Check if it's a range (e.g., "5-10")
-//     if (duration.includes('-')) {
-//       const [min, max] = duration.split('-').map(Number);
-//       if (!Number.isNaN(min) && !Number.isNaN(max)) {
-//         durationCondition = { duration: { $gte: min, $lte: max } };
-//       } else if (!Number.isNaN(min)) {
-//         durationCondition = { duration: { $gte: min } };
-//       }
-//     } else {
-//       // Check for short/medium/long terms
-//       const durLower = duration.toLowerCase();
-//       if (durLower.includes('short')) {
-//         durationCondition = { duration: { $lte: 5 } };
-//       } else if (durLower.includes('medium')) {
-//         durationCondition = { duration: { $gt: 5, $lte: 10 } };
-//       } else if (durLower.includes('long')) {
-//         durationCondition = { duration: { $gt: 10 } };
-//       } else {
-//         // Try to parse as a single number
-//         const days = parseInt(duration, 10);
-//         if (!Number.isNaN(days)) {
-//           durationCondition = { duration: days };
-//         }
-//       }
-//     }
+    // Check if it's a range (e.g., "5-10")
+    if (duration.includes('-')) {
+      const [min, max] = duration.split('-').map(Number);
+      if (!Number.isNaN(min) && !Number.isNaN(max)) {
+        durationCondition = { duration: { $gte: min, $lte: max } };
+      } else if (!Number.isNaN(min)) {
+        durationCondition = { duration: { $gte: min } };
+      }
+    } else {
+      // Check for short/medium/long terms
+      const durLower = duration.toLowerCase();
+      if (durLower.includes('short')) {
+        durationCondition = { duration: { $lte: 5 } };
+      } else if (durLower.includes('medium')) {
+        durationCondition = { duration: { $gt: 5, $lte: 10 } };
+      } else if (durLower.includes('long')) {
+        durationCondition = { duration: { $gt: 10 } };
+      } else {
+        // Try to parse as a single number
+        const days = parseInt(duration, 10);
+        if (!Number.isNaN(days)) {
+          durationCondition = { duration: days };
+        }
+      }
+    }
 
-//     if (durationCondition) {
-//       searchConditions.push(durationCondition);
-//     }
-//   }
+    if (durationCondition) {
+      searchConditions.push(durationCondition);
+    }
+  }
 
-//   if (maxGroupSize) {
-//     // Find tours that can accommodate at least the specified group size
-//     searchConditions.push({
-//       maxGroupSize: { $gte: parseInt(maxGroupSize, 10) },
-//     });
-//   }
+  if (maxGroupSize) {
+    // Find tours that can accommodate at least the specified group size
+    searchConditions.push({
+      maxGroupSize: { $gte: parseInt(maxGroupSize, 10) },
+    });
+  }
 
-//   if (price) {
-//     // Range search for price with more flexible parsing
-//     let priceCondition;
+  if (price) {
+    // Range search for price with more flexible parsing
+    let priceCondition;
 
-//     // Check if it's a range
-//     if (price.includes('-')) {
-//       const [min, max] = price.split('-').map(Number);
-//       if (!Number.isNaN(min) && !Number.isNaN(max)) {
-//         priceCondition = { price: { $gte: min, $lte: max } };
-//       } else if (!Number.isNaN(min)) {
-//         priceCondition = { price: { $gte: min } };
-//       }
-//     } else {
-//       // Check for budget/premium terms
-//       const priceLower = price.toLowerCase();
-//       if (priceLower.includes('budget') || priceLower.includes('cheap')) {
-//         priceCondition = { price: { $lte: 500 } };
-//       } else if (
-//         priceLower.includes('mid') ||
-//         priceLower.includes('moderate')
-//       ) {
-//         priceCondition = { price: { $gt: 500, $lte: 1500 } };
-//       } else if (
-//         priceLower.includes('premium') ||
-//         priceLower.includes('luxury')
-//       ) {
-//         priceCondition = { price: { $gt: 1500 } };
-//       } else {
-//         // Try to parse as a single number
-//         const amount = parseInt(price, 10);
-//         if (!Number.isNaN(amount)) {
-//           priceCondition = { price: { $lte: amount } };
-//         }
-//       }
-//     }
+    // Check if it's a range
+    if (price.includes('-')) {
+      const [min, max] = price.split('-').map(Number);
+      if (!Number.isNaN(min) && !Number.isNaN(max)) {
+        priceCondition = { price: { $gte: min, $lte: max } };
+      } else if (!Number.isNaN(min)) {
+        priceCondition = { price: { $gte: min } };
+      }
+    } else {
+      // Check for budget/premium terms
+      const priceLower = price.toLowerCase();
+      if (priceLower.includes('budget') || priceLower.includes('cheap')) {
+        priceCondition = { price: { $lte: 500 } };
+      } else if (
+        priceLower.includes('mid') ||
+        priceLower.includes('moderate')
+      ) {
+        priceCondition = { price: { $gt: 500, $lte: 1500 } };
+      } else if (
+        priceLower.includes('premium') ||
+        priceLower.includes('luxury')
+      ) {
+        priceCondition = { price: { $gt: 1500 } };
+      } else {
+        // Try to parse as a single number
+        const amount = parseInt(price, 10);
+        if (!Number.isNaN(amount)) {
+          priceCondition = { price: { $lte: amount } };
+        }
+      }
+    }
 
-//     if (priceCondition) {
-//       searchConditions.push(priceCondition);
-//     }
-//   }
+    if (priceCondition) {
+      searchConditions.push(priceCondition);
+    }
+  }
 
-//   // Combine all search conditions with AND logic
-//   if (searchConditions.length > 0) {
-//     searchQuery.$and = searchConditions;
-//   }
+  // Combine all search conditions with AND logic
+  if (searchConditions.length > 0) {
+    searchQuery.$and = searchConditions;
+  }
 
-//   // Execute the search query
-//   const features = new APIFeatures(Tour.find(searchQuery), req.query)
-//     .sort()
-//     .limitFields()
-//     .paginate();
+  // Execute the search query
+  const features = new APIFeatures(Tour.find(searchQuery), req.query)
+    .sort()
+    .limitFields()
+    .paginate();
 
-//   const tours = await features.query;
+  const tours = await features.query;
 
-//   // Return the results
-//   res.status(200).json({
-//     status: 'success',
-//     results: tours.length,
-//     data: {
-//       data: tours,
-//     },
-//   });
-// });
+  // Return the results
+  res.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: {
+      data: tours,
+    },
+  });
+});
 ///////////////////////
 
 // Old search functionality - removed
