@@ -246,13 +246,13 @@ exports.searchTours = catchAsync(async (req, res, next) => {
 
   if (date) {
     // Enhanced date search with seasonal terms support
-    let dateObj;
+
     let dateCondition;
 
     // Check if it's a standard date format
-    dateObj = new Date(date);
+    const dateObj = new Date(date);
 
-    if (!isNaN(dateObj.getTime())) {
+    if (!Number.isNaN(dateObj.getTime())) {
       // Valid date - find tours starting within 90 days of this date
       const endDate = new Date(dateObj);
       endDate.setDate(endDate.getDate() + 90);
@@ -323,9 +323,9 @@ exports.searchTours = catchAsync(async (req, res, next) => {
     // Check if it's a range (e.g., "5-10")
     if (duration.includes('-')) {
       const [min, max] = duration.split('-').map(Number);
-      if (!isNaN(min) && !isNaN(max)) {
+      if (!Number.isNaN(min) && !Number.isNaN(max)) {
         durationCondition = { duration: { $gte: min, $lte: max } };
-      } else if (!isNaN(min)) {
+      } else if (!Number.isNaN(min)) {
         durationCondition = { duration: { $gte: min } };
       }
     } else {
@@ -340,7 +340,7 @@ exports.searchTours = catchAsync(async (req, res, next) => {
       } else {
         // Try to parse as a single number
         const days = parseInt(duration, 10);
-        if (!isNaN(days)) {
+        if (!Number.isNaN(days)) {
           durationCondition = { duration: days };
         }
       }
@@ -365,9 +365,9 @@ exports.searchTours = catchAsync(async (req, res, next) => {
     // Check if it's a range
     if (price.includes('-')) {
       const [min, max] = price.split('-').map(Number);
-      if (!isNaN(min) && !isNaN(max)) {
+      if (!Number.isNaN(min) && !Number.isNaN(max)) {
         priceCondition = { price: { $gte: min, $lte: max } };
-      } else if (!isNaN(min)) {
+      } else if (!Number.isNaN(min)) {
         priceCondition = { price: { $gte: min } };
       }
     } else {
@@ -388,7 +388,7 @@ exports.searchTours = catchAsync(async (req, res, next) => {
       } else {
         // Try to parse as a single number
         const amount = parseInt(price, 10);
-        if (!isNaN(amount)) {
+        if (!Number.isNaN(amount)) {
           priceCondition = { price: { $lte: amount } };
         }
       }
@@ -451,7 +451,7 @@ exports.searchTours = catchAsync(async (req, res, next) => {
 //     // This would require parsing the date string and finding tours with start dates
 //     // around that period. Simplified version for demonstration:
 //     const dateObj = new Date(date);
-//     if (!Number.isNaN(dateObj.getTime())) {
+//     if (!Number.Number.isNaN(dateObj.getTime())) {
 //       // If valid date, find tours starting after this date
 //       searchQuery.startDates = { $gte: dateObj };
 //     }
