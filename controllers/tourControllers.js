@@ -1,5 +1,7 @@
 const multer = require('multer');
 const sharp = require('sharp');
+// Require cloudinary configuration
+const cloudinary = require('../utils/cloudinary');
 const Tour = require('../models/tourModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
@@ -7,6 +9,43 @@ const factory = require('./handlerFactory');
 const APIFeatures = require('../utils/apiFeatures');
 const { expandSearchLocation } = require('../utils/locationHelper');
 
+// ORIGINAL LOCAL STORAGE IMPLEMENTATION (COMMENTED OUT)
+/*
+// Original local storage implementation (commented out)
+// const storage = multer.memoryStorage();
+//
+// const multerFilter = (req, file, cb) => {
+//   if (file.mimetype.startsWith('image')) {
+//     cb(null, true);
+//   } else {
+//     cb(new AppError('Not an image, Please Upload Only Images!', 400), false);
+//   }
+// };
+// const upload = multer({
+//   storage: storage,
+//   fileFilter: multerFilter,
+// });
+
+// New Cloudinary storage implementation
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image, Please Upload Only Images!', 400), false);
+  }
+};
+
+// For Cloudinary, we'll use memory storage first to allow for image processing
+const storage = multer.memoryStorage();
+
+const upload = multer({
+  storage: storage,
+  fileFilter: multerFilter,
+});
+*/
+
+// NEW IMPLEMENTATION WITH CLOUDINARY
+// Configure multer to use memory storage (we'll process and upload to cloudinary)
 const storage = multer.memoryStorage();
 
 const multerFilter = (req, file, cb) => {
@@ -16,6 +55,7 @@ const multerFilter = (req, file, cb) => {
     cb(new AppError('Not an image, Please Upload Only Images!', 400), false);
   }
 };
+
 const upload = multer({
   storage: storage,
   fileFilter: multerFilter,
@@ -26,6 +66,8 @@ exports.uploadTourImages = upload.fields([
   { name: 'images', maxCount: 3 },
 ]);
 
+// ORIGINAL LOCAL STORAGE IMPLEMENTATION (COMMENTED OUT)
+/*
 exports.resizeTourImages = catchAsync(async (req, res, next) => {
   if (!req.files.imageCover || !req.files.images) return next();
   req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
@@ -39,7 +81,7 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
   req.body.images = [];
   await Promise.all(
     req.files.images.map(async (file, i) => {
-      const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
+      const filename = `tour-${req.params.id ? req.params.id : i}-${Date.now()}-${i + 1}.jpeg`;
       await sharp(file.buffer)
         .resize(2000, 1333)
         .toFormat('jpeg')
@@ -48,6 +90,71 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
       req.body.images.push(filename);
     }),
   );
+  next();
+});
+*/
+
+// NEW IMPLEMENTATION WITH CLOUDINARY
+exports.resizeTourImages = catchAsync(async (req, res, next) => {
+  if (!req.files) return next();
+
+  // Handle imageCover
+  if (req.files.imageCover) {
+    // Process the image with sharp to resize and optimize
+    const processedBuffer = await sharp(req.files.imageCover[0].buffer)
+      .resize(2000, 1333)
+      .toFormat('jpeg')
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    // Convert buffer to base64 for cloudinary upload
+    const b64 = Buffer.from(processedBuffer).toString('base64');
+    const dataURI = `data:image/jpeg;base64,${b64}`;
+
+    // Upload to cloudinary
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: 'natours/tours/covers',
+      resource_type: 'image',
+    });
+
+    // Store the full cloudinary URL in the request body
+    req.body.imageCover = result.secure_url;
+  }
+
+  // Handle tour images
+  if (req.files.images) {
+    req.body.images = [];
+
+    // Create an array of promises for uploading images
+    const uploadPromises = req.files.images.map(async (file, i) => {
+      // Process the image with sharp
+      const processedBuffer = await sharp(file.buffer)
+        .resize(2000, 1333)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 })
+        .toBuffer();
+
+      // Convert buffer to base64 for cloudinary upload
+      const b64 = Buffer.from(processedBuffer).toString('base64');
+      const dataURI = `data:image/jpeg;base64,${b64}`;
+
+      // Upload to cloudinary
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: 'natours/tours/images',
+        resource_type: 'image',
+      });
+
+      // Return the secure URL
+      return result.secure_url;
+    });
+
+    // Wait for all uploads to complete
+    const imageUrls = await Promise.all(uploadPromises);
+
+    // Add the URLs to the request body
+    req.body.images = imageUrls;
+  }
+
   next();
 });
 
