@@ -82,7 +82,7 @@ const tourSchema = new mongoose.Schema(
       //this validation run just when we create a new tour not for uptading
       validate: {
         validator: function (val) {
-          return val <= this.price;
+          return val < this.price;
         },
         massage:
           'The Discount Price ({VALUE} Must Be Less Than The Normal price)',
